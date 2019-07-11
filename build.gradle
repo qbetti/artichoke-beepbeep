@@ -9,10 +9,10 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
-    maven { url "https://jitpack.io" }
     flatDir {
         dirs('libs/')
     }
+    maven { url "https://jitpack.io" }
 }
 
 configurations.all {

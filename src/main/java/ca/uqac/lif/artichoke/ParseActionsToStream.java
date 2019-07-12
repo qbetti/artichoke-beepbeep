@@ -6,6 +6,7 @@ import ca.uqac.lif.artichoke.keyring.Keyring;
 import ca.uqac.lif.cep.Connector;
 import ca.uqac.lif.cep.GroupProcessor;
 import ca.uqac.lif.cep.functions.ApplyFunction;
+import ca.uqac.lif.cep.functions.UnaryFunction;
 import ca.uqac.lif.cep.tmf.QueueSource;
 import ca.uqac.lif.cep.util.Lists;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -22,20 +23,10 @@ import java.util.Scanner;
 
 public class ParseActionsToStream extends GroupProcessor {
     public ParseActionsToStream(Keyring ownerKeyring) {
-        super(0, 1);
+        super(1, 1);
 
 
-        String PAS_File = "./example/patient_file.pas";
-
-        Scanner scanner = null;
-        try {
-            scanner = new Scanner(new File(PAS_File));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        String encodedHistory = scanner.nextLine();
-        scanner.close();
+this.associateInput(1,1);
         History decodedHistory = ca.uqac.lif.artichoke.History.decode(encodedHistory);
 
         List<WrappedAction> wrappedActionsList =  decodedHistory.decrypt(ownerKeyring);
@@ -53,7 +44,7 @@ public class ParseActionsToStream extends GroupProcessor {
     }
     public ParseActionsToStream(Map<String, byte[]> keysList)
     {
-        super(0,1);
+        super(1,1);
         String PAS_File = "./example/patient_file.pas";
 
         Scanner scanner = null;
@@ -78,4 +69,6 @@ public class ParseActionsToStream extends GroupProcessor {
         this.addProcessors(listToUnpack, unpackInstance);
         this.associateOutput(0, unpackInstance, 0);
     }
+
+    private class DecodeActions extends UnaryFunction
 }

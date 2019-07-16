@@ -22,6 +22,7 @@ import java.util.Queue;
 import java.util.Scanner;
 
 public class ParseActionsToStream extends GroupProcessor {
+
     public ParseActionsToStream(Keyring ownerKeyring) {
         super(1, 1);
 
@@ -42,7 +43,7 @@ this.associateInput(1,1);
 
 
     }
-    public ParseActionsToStream(Map<String, byte[]> keysList)
+    public ParseActionsToStream(Map<String, byte[]> keysiLst)
     {
         super(1,1);
         String PAS_File = "./example/patient_file.pas";
@@ -70,5 +71,14 @@ this.associateInput(1,1);
         this.associateOutput(0, unpackInstance, 0);
     }
 
-    private class DecodeActions extends UnaryFunction
+    private class DecodeActions extends UnaryFunction {
+        public DecodeActions() {
+            super(String.class, History.class);
+        }
+
+        @Override
+        public Object getValue(Object o) {
+            return null;
+        }
+    }
 }

@@ -27,10 +27,10 @@ public class ParseActionsToStream extends GroupProcessor {
         super(1, 1);
 
 
-this.associateInput(1,1);
-        History decodedHistory = ca.uqac.lif.artichoke.History.decode(encodedHistory);
+        //this.associateInput(1, 1);
+        History decodedHistory = ca.uqac.lif.artichoke.History.decode(/*encodedHistory*/ "wasd");
 
-        List<WrappedAction> wrappedActionsList =  decodedHistory.decrypt(ownerKeyring);
+        List<WrappedAction> wrappedActionsList = decodedHistory.decrypt(ownerKeyring);
 
         QueueSource listToUnpack = new QueueSource().setEvents(wrappedActionsList);
         listToUnpack.loop(false);
@@ -43,9 +43,9 @@ this.associateInput(1,1);
 
 
     }
-    public ParseActionsToStream(Map<String, byte[]> keysiLst)
-    {
-        super(1,1);
+/*
+    public ParseActionsToStream(Map<String, byte[]> keysiLst) {
+        super(1, 1);
         String PAS_File = "./example/patient_file.pas";
 
         Scanner scanner = null;
@@ -59,7 +59,7 @@ this.associateInput(1,1);
         scanner.close();
         History decodedHistory = ca.uqac.lif.artichoke.History.decode(encodedHistory);
 
-        List<WrappedAction> wrappedActionsList =  decodedHistory.decrypt(keysList);
+        List<WrappedAction> wrappedActionsList = decodedHistory.decrypt(keysList);
 
         QueueSource listToUnpack = new QueueSource().setEvents(wrappedActionsList);
         listToUnpack.loop(false);
@@ -70,7 +70,7 @@ this.associateInput(1,1);
         this.addProcessors(listToUnpack, unpackInstance);
         this.associateOutput(0, unpackInstance, 0);
     }
-
+*/
     private class DecodeActions extends UnaryFunction {
         public DecodeActions() {
             super(String.class, History.class);

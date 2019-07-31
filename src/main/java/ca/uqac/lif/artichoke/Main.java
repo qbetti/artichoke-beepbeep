@@ -8,16 +8,17 @@ import ca.uqac.lif.cep.io.Print;
 import ca.uqac.lif.cep.tmf.Pump;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import javax.crypto.spec.PSource;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.security.Security;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
+import java.util.List;
 
+import static jdk.nashorn.internal.runtime.regexp.joni.Syntax.Java;
 
 public class Main {
     static JRadioButton fromPASFileRadioButton;
@@ -25,20 +26,17 @@ public class Main {
     static JRadioButton fromWebSocketRadioButton;
     static DefaultListModel checkboxListModel;
     static Map<String, byte[]> keysMap = new HashMap<>();
-
+    static List<JCheckBox> groupsList = new ArrayList<>();
 
     public static void main(String[] args) {
 
+        Security.addProvider(new BouncyCastleProvider());
         JFrame myFrame = new JFrame("PWA opener");
-
         JButton importFileButton = new JButton("import keyring");
 
         //checkbox list
         JList checkBoxList = new CheckBoxList();
-        Component myComponent = new JCheckBox("this is a checkbox");
         checkboxListModel = new DefaultListModel();
-        checkboxListModel.addElement(myComponent);
-        checkBoxList.add(myComponent);
         checkBoxList.setModel(checkboxListModel);
 
 
@@ -98,9 +96,7 @@ public class Main {
                         String s1 = "", s2 = "";
                         while ((s1 = br.readLine()) != null) {
                             s2 += s1 + "\n";
-                        }
-                        System.out.println(s2);
-                        br.close();
+                        }br.close();
 
 
                         //the password popup
@@ -116,15 +112,19 @@ public class Main {
                         if (option == 0) // pressing OK button
                         {
                             char[] password = pass.getPassword();
-                            System.out.println("Your password is: " + new String(password));
 
+                            Keyring importedKeyring = Keyring.loadFromFile(keyringFile, new String(password));
+                            List<String> keyringGroupe = importedKeyring.getGroupIds();
+                            for (String groupId : keyringGroupe) {
+                                if (!keysMap.containsKey(groupId)) {
+                                    keysMap.put(groupId, importedKeyring.retrieveGroupKey(groupId));
 
-                            Keyring nurseKeyring = Keyring.loadFromFile(keyringFile, new String(password));
-                            keysMap.put("employees", nurseKeyring.retrieveGroupKey("employees"));
+                                    Component myComponent = new JCheckBox(groupId);
+                                    checkboxListModel.addElement(myComponent);
+                                    groupsList.add(myComponent);
+                                }
+                            }
                         }
-
-                        //prompt to add group id needed
-
 
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -171,6 +171,19 @@ public class Main {
         String s2 = "";
         Frame fileSelecterFrame = new Frame();
 
+
+        JList<String> list = new JList<>();
+
+        int a = list.getModel().getSize();
+        for(int i = 0; i< list.getModel().getSize();i++){
+            System.out.println(list.getModel().getElementAt(i));
+        }
+        
+        
+        
+        
+        
+
         JFileChooser fc = new JFileChooser();
         int i = fc.showOpenDialog(fileSelecterFrame);
         if (i == JFileChooser.APPROVE_OPTION) {
@@ -184,7 +197,6 @@ public class Main {
                 while ((s1 = br.readLine()) != null) {
                     s2 += s1 + "\n";
                 }
-                System.out.println(s2);
                 br.close();
 
 
@@ -207,9 +219,8 @@ public class Main {
         FromPASFile reader = new FromPASFile(s2);
     }
 
-  /* private static void ParseUsingHashMap() {
+   /*private static void ParseUsingHashMap() {
         Security.addProvider(new BouncyCastleProvider());
-
 
         String KR_NURSE = "./example/kr-employee.json";
         String KR_INSURANCE = "./example/kr-insurance.json";
@@ -246,26 +257,8 @@ public class Main {
 
         //adding the keyrings to the hashmap
         Map<String, byte[]> keysMap = new HashMap<>();
-        try {
-            keysMap.put("insurance", insuranceKeyring.retrieveGroupKey("insurance"));
-        } catch (GroupIdException e) {
-            e.printStackTrace();
-        } catch (PrivateKeyDecryptionException e) {
-            e.printStackTrace();
-        } catch (BadPassphraseException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            keysMap.put("employees", nurseKeyring.retrieveGroupKey("employees"));
-        } catch (GroupIdException e) {
-            e.printStackTrace();
-        } catch (PrivateKeyDecryptionException e) {
-            e.printStackTrace();
-        } catch (BadPassphraseException e) {
-            e.printStackTrace();
-        }
-
+        keysMap.put("insurance", insuranceKeyring.retrieveGroupKey("insurance"));
+        keysMap.put("employees", nurseKeyring.retrieveGroupKey("employees"));
         ParseActionsToStream ActionsStream = new ParseActionsToStream(keysMap);
 
 

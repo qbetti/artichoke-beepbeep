@@ -8,7 +8,6 @@ import ca.uqac.lif.cep.io.Print;
 import ca.uqac.lif.cep.tmf.Pump;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import javax.crypto.spec.PSource;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -18,7 +17,6 @@ import java.security.Security;
 import java.util.*;
 import java.util.List;
 
-import static jdk.nashorn.internal.runtime.regexp.joni.Syntax.Java;
 
 public class Main {
     static JRadioButton fromPASFileRadioButton;
@@ -26,7 +24,6 @@ public class Main {
     static JRadioButton fromWebSocketRadioButton;
     static DefaultListModel checkboxListModel;
     static Map<String, byte[]> keysMap = new HashMap<>();
-    static List<JCheckBox> groupsList = new ArrayList<>();
 
     public static void main(String[] args) {
 
@@ -96,7 +93,8 @@ public class Main {
                         String s1 = "", s2 = "";
                         while ((s1 = br.readLine()) != null) {
                             s2 += s1 + "\n";
-                        }br.close();
+                        }
+                        br.close();
 
 
                         //the password popup
@@ -121,7 +119,6 @@ public class Main {
 
                                     Component myComponent = new JCheckBox(groupId);
                                     checkboxListModel.addElement(myComponent);
-                                    groupsList.add(myComponent);
                                 }
                             }
                         }
@@ -147,10 +144,6 @@ public class Main {
             }
         });
 
-
-        // ParseUsingHashMap();
-        //ParseUsingSingleKey();
-
     }
 
     static private void DecryptPAS() throws IOException {
@@ -168,138 +161,35 @@ public class Main {
 
     static private void DecryptFromFASFile() throws IOException {
 
-        String s2 = "";
-        Frame fileSelecterFrame = new Frame();
+        Map<String, byte[]> selectedKeysMap = new HashMap<>();
 
 
-        JList<String> list = new JList<>();
-
-        int a = list.getModel().getSize();
-        for(int i = 0; i< list.getModel().getSize();i++){
-            System.out.println(list.getModel().getElementAt(i));
-        }
-        
-        
-        
-        
-        
-
-        JFileChooser fc = new JFileChooser();
-        int i = fc.showOpenDialog(fileSelecterFrame);
-        if (i == JFileChooser.APPROVE_OPTION) {
-
-            File keyringFile = fc.getSelectedFile();
-            String filepath = keyringFile.getPath();
-
-            try {
-                BufferedReader br = new BufferedReader(new FileReader(filepath));
-                String s1 = "";
-                while ((s1 = br.readLine()) != null) {
-                    s2 += s1 + "\n";
-                }
-                br.close();
-
-
-                String PAS_File = "./example/patient_file.pas";
-
-                Scanner scanner = null;
-                try {
-                    scanner = new Scanner(new File(PAS_File));
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-
-                String encodedHistory = scanner.nextLine();
-                scanner.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+        int a = checkboxListModel.getSize();
+        for (int i = 0; i < checkboxListModel.getSize(); i++) {
+            JCheckBox b = (JCheckBox) checkboxListModel.getElementAt(i);
+            if (b.isSelected()) {
+                System.out.println(b.getText() + " is selected");
+                String groupId = b.getText();
+                byte[] key = keysMap.get(groupId);
+                selectedKeysMap.put(groupId, key);
             }
         }
 
-        FromPASFile reader = new FromPASFile(s2);
-    }
 
-   /*private static void ParseUsingHashMap() {
-        Security.addProvider(new BouncyCastleProvider());
-
-        String KR_NURSE = "./example/kr-employee.json";
-        String KR_INSURANCE = "./example/kr-insurance.json";
-
-        File nurseFile = new File(KR_NURSE);
-        File insuranceFile = new File(KR_INSURANCE);
-
-        final String PWD_KR_NURSE = "nurse";
-        final String PWD_KR_INSURANCE = "insurance";
-
-
-        //Loading the keyrings from file
-        Keyring nurseKeyring = null;
-        try {
-            nurseKeyring = Keyring.loadFromFile(nurseFile, PWD_KR_NURSE);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (PrivateKeyDecryptionException e) {
-            e.printStackTrace();
-        } catch (BadPassphraseException e) {
-            e.printStackTrace();
-        }
-
-        Keyring insuranceKeyring = null;
-        try {
-            insuranceKeyring = Keyring.loadFromFile(insuranceFile, PWD_KR_INSURANCE);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (PrivateKeyDecryptionException e) {
-            e.printStackTrace();
-        } catch (BadPassphraseException e) {
-            e.printStackTrace();
-        }
-
-        //adding the keyrings to the hashmap
-        Map<String, byte[]> keysMap = new HashMap<>();
-        keysMap.put("insurance", insuranceKeyring.retrieveGroupKey("insurance"));
-        keysMap.put("employees", nurseKeyring.retrieveGroupKey("employees"));
-        ParseActionsToStream ActionsStream = new ParseActionsToStream(keysMap);
+        PasFileReader reader = new PasFileReader();
+        ParseActionsToStream parser = new ParseActionsToStream(selectedKeysMap);
+        Connector.connect(reader, 0 , parser, 0);
 
 
         //Need a pump to automate the process
         Pump activator = new Pump(0);
-        Connector.connect(ActionsStream, activator);
+        Connector.connect(parser, activator);
 
         Print p = new Print().setSeparator("\n\n");
         Connector.connect(activator, p);
+        System.out.println("running pump");
         activator.run();
-    }*/
-
-    public static void ParseUsingSingleKey() {
-
-        Security.addProvider(new BouncyCastleProvider());
-
-        String KR_PATIENT = "./example/kr-patient.json";
-        final String PWD_KR_PATIENT = "patient";
-        File patientFile = new File(KR_PATIENT);
-
-        Keyring ownerKeyring = null;
-        try {
-            ownerKeyring = Keyring.loadFromFile(patientFile, PWD_KR_PATIENT);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (PrivateKeyDecryptionException e) {
-            e.printStackTrace();
-        } catch (BadPassphraseException e) {
-            e.printStackTrace();
-        }
-
-
-        ParseActionsToStream ActionsStream = new ParseActionsToStream(ownerKeyring);
-
-        //Need a pump to automate the process
-        Pump activator = new Pump(0);
-        Connector.connect(ActionsStream, activator);
-
-        Print p = new Print().setSeparator("\n\n");
-        Connector.connect(activator, p);
-        activator.run();
+        System.out.println("end reached");
     }
 
 }

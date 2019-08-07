@@ -1,2 +1,3 @@
 rootProject.name = 'artichoke-beepbeep'
 
+include('artichoke-keyring')

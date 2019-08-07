@@ -8,20 +8,18 @@ version '1.0-SNAPSHOT'
 sourceCompatibility = 1.8
 
 repositories {
-    mavenCentral()
+    jcenter()
     flatDir {
         dirs('libs/')
     }
-    maven { url "https://jitpack.io" }
 }
 
-configurations.all {
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-}
+
+
 
 dependencies {
     compile name: 'beepbeep-3'
-    compile "com.github.qbetti:artichoke-crypto:master-SNAPSHOT"
+    compile project(':artichoke-keyring')
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 

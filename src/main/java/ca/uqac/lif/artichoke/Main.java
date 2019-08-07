@@ -1,14 +1,14 @@
 package ca.uqac.lif.artichoke;
 
-import ca.uqac.lif.artichoke.exceptions.BadPassphraseException;
-import ca.uqac.lif.artichoke.exceptions.PrivateKeyDecryptionException;
 import ca.uqac.lif.artichoke.keyring.Keyring;
 import ca.uqac.lif.cep.Connector;
-import ca.uqac.lif.cep.io.Print;
-import ca.uqac.lif.cep.tmf.Pump;
+import ca.uqac.lif.cep.Pullable;
+import ca.uqac.lif.cep.io.ReadLines;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -24,6 +24,9 @@ public class Main {
     static JRadioButton fromWebSocketRadioButton;
     static DefaultListModel checkboxListModel;
     static Map<String, byte[]> keysMap = new HashMap<>();
+    private static Object[][] data = new Object[][]{};
+    private static JTable table;
+    private static DefaultTableModel tableModel;
 
     public static void main(String[] args) {
 
@@ -53,11 +56,12 @@ public class Main {
         radButtonsPanel.add(fromPASFileRadioButton);
         radButtonsPanel.add(fromWebSocketRadioButton);
 
-        //text area
-        JTextArea outputTextArea = new JTextArea();
-        outputTextArea.setEditable(false);
-        outputTextArea.insert("Output will be shown here", 0);
 
+        //Table
+        String[] tableColumns = new String[]{"Field", "action", "content", "actor", "hash", "groupID"};
+
+        table = new JTable(data, tableColumns);
+        tableModel = (DefaultTableModel) table.getModel();
 
         //decrypt PAS button
         JButton decrypnPASButton = new JButton("decrypt sequence");
@@ -65,15 +69,18 @@ public class Main {
 
         //adding the components
         myFrame.add(importFileButton);
-        myFrame.add(checkBoxList);
+        myFrame.add(new JScrollPane(checkBoxList));
         myFrame.add(radButtonsPanel);
         myFrame.add(decrypnPASButton);
-        myFrame.add(outputTextArea);
+        //myFrame.add(outputTextArea);
+        myFrame.add(new JScrollPane(table));
+
 
         GridLayout myManager = new GridLayout(5, 0);
 
         myFrame.setSize(400, 500);//400 width and 500 height
         myFrame.setLayout(myManager);//using no layout managers
+        myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         myFrame.setVisible(true);//making the frame visible
 
@@ -136,7 +143,7 @@ public class Main {
             public void actionPerformed(ActionEvent e) {
 
                 try {
-                    DecryptPAS();
+                    CheckSourceOfPAS();
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -146,10 +153,10 @@ public class Main {
 
     }
 
-    static private void DecryptPAS() throws IOException {
+    static private void CheckSourceOfPAS() throws IOException {
         if (fromPASFileRadioButton.isSelected()) {
             System.out.println("from pas file");
-            DecryptFromFASFile();
+            DecryptFromDotFASFile();
         } else if (fromMetadataRadioButton.isSelected()) {
             System.out.println("from metadata");
         } else if (fromWebSocketRadioButton.isSelected()) {
@@ -159,10 +166,9 @@ public class Main {
         }
     }
 
-    static private void DecryptFromFASFile() throws IOException {
-
+    static private void DecryptFromDotFASFile() throws IOException {
+        String filepath;
         Map<String, byte[]> selectedKeysMap = new HashMap<>();
-
 
         int a = checkboxListModel.getSize();
         for (int i = 0; i < checkboxListModel.getSize(); i++) {
@@ -175,21 +181,34 @@ public class Main {
             }
         }
 
+        Frame fileSelecterFrame = new Frame();
 
-        PasFileReader reader = new PasFileReader();
-        ParseActionsToStream parser = new ParseActionsToStream(selectedKeysMap);
-        Connector.connect(reader, 0 , parser, 0);
+        JFileChooser fc = new JFileChooser();
+        int i = fc.showOpenDialog(fileSelecterFrame);
+        if (i == JFileChooser.APPROVE_OPTION) {
+            File keyringFile = fc.getSelectedFile();
+            filepath = keyringFile.getPath();
 
+            System.out.println(filepath);
 
-        //Need a pump to automate the process
-        Pump activator = new Pump(0);
-        Connector.connect(parser, activator);
+            /*scanner*/
+            Scanner myScan = new Scanner(keyringFile);
+            System.out.println(myScan.nextLine());
+            myScan.close();
+            /*end scanner*/
 
-        Print p = new Print().setSeparator("\n\n");
-        Connector.connect(activator, p);
-        System.out.println("running pump");
-        activator.run();
-        System.out.println("end reached");
+            ReadLines reader = new ReadLines(new FileInputStream(filepath));
+            ParseActionsToStream parser = new ParseActionsToStream(selectedKeysMap);
+            Connector.connect(reader, parser);
+
+            Pullable p = parser.getPullableOutput();
+            int j = 0;
+            while (p.hasNext()) {
+                WrappedAction latestAction = (WrappedAction) p.pull();
+                tableModel.addRow(new Object[]{latestAction.getAction().toString(), latestAction.getPeer().toString(), latestAction.getGroupId()});
+            }
+
+        }
     }
 
 }

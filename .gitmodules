@@ -1,0 +1,3 @@
+[submodule "artichoke-crypto"]
+	path = artichoke-crypto
+	url = https://github.com/qbetti/artichoke-crypto

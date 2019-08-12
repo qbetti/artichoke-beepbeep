@@ -19,6 +19,7 @@ public class ParseActionsToStream extends SynchronousProcessor {
     @Override
     protected boolean compute(Object[] objects, Queue<Object[]> queue) {
 
+        System.out.println(objects[0].toString());
         String encodedHistory = (String) objects[0];
         History decodedHistory = ca.uqac.lif.artichoke.History.decode(encodedHistory);
 
@@ -28,7 +29,8 @@ public class ParseActionsToStream extends SynchronousProcessor {
             //  System.out.println(action);
 
         }
-        return false;
+        System.out.println(queue.toString());
+        return true;
     }
 
     @Override

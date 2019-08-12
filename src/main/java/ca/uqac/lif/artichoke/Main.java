@@ -7,7 +7,9 @@ import ca.uqac.lif.cep.io.ReadLines;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -26,9 +28,12 @@ public class Main {
     static Map<String, byte[]> keysMap = new HashMap<>();
     private static Object[][] data = new Object[][]{};
     private static JTable table;
-    private static DefaultTableModel tableModel;
+    private static DefaultTableModel myTableModel;
 
     public static void main(String[] args) {
+        String[] tableColumns = new String[]{"Field", "action", "content", "actor", "groupID"};
+        myTableModel = new DefaultTableModel(tableColumns, 0);
+
 
         Security.addProvider(new BouncyCastleProvider());
         JFrame myFrame = new JFrame("PWA opener");
@@ -58,12 +63,13 @@ public class Main {
 
 
         //Table
-        String[] tableColumns = new String[]{"Field", "action", "content", "actor", "hash", "groupID"};
 
-        table = new JTable(data, tableColumns);
-        tableModel = (DefaultTableModel) table.getModel();
+        TableColumnModel columnModel = new DefaultTableColumnModel();
+
+        table = new JTable(myTableModel);
 
         //decrypt PAS button
+
         JButton decrypnPASButton = new JButton("decrypt sequence");
 
 
@@ -72,7 +78,6 @@ public class Main {
         myFrame.add(new JScrollPane(checkBoxList));
         myFrame.add(radButtonsPanel);
         myFrame.add(decrypnPASButton);
-        //myFrame.add(outputTextArea);
         myFrame.add(new JScrollPane(table));
 
 
@@ -174,7 +179,6 @@ public class Main {
         for (int i = 0; i < checkboxListModel.getSize(); i++) {
             JCheckBox b = (JCheckBox) checkboxListModel.getElementAt(i);
             if (b.isSelected()) {
-                System.out.println(b.getText() + " is selected");
                 String groupId = b.getText();
                 byte[] key = keysMap.get(groupId);
                 selectedKeysMap.put(groupId, key);
@@ -189,24 +193,21 @@ public class Main {
             File keyringFile = fc.getSelectedFile();
             filepath = keyringFile.getPath();
 
-            System.out.println(filepath);
-
-            /*scanner*/
-            Scanner myScan = new Scanner(keyringFile);
-            System.out.println(myScan.nextLine());
-            myScan.close();
-            /*end scanner*/
-
             ReadLines reader = new ReadLines(new FileInputStream(filepath));
             ParseActionsToStream parser = new ParseActionsToStream(selectedKeysMap);
             Connector.connect(reader, parser);
 
             Pullable p = parser.getPullableOutput();
-            int j = 0;
             while (p.hasNext()) {
                 WrappedAction latestAction = (WrappedAction) p.pull();
-                tableModel.addRow(new Object[]{latestAction.getAction().toString(), latestAction.getPeer().toString(), latestAction.getGroupId()});
+                System.out.println(latestAction.toString());
+                System.out.println("Before add row");
+
+                myTableModel.addRow(new Object[]{latestAction.getAction().getTarget(), latestAction.getAction().getType(), latestAction.getAction().getValue(), latestAction.getPeer().getName(), latestAction.getGroupId()});
+                System.out.println("After add row");
             }
+            ((DefaultTableModel) myTableModel).fireTableDataChanged();
+            System.out.println("done");
 
         }
     }
